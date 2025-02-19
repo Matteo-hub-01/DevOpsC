@@ -3,7 +3,7 @@ name: Deploy to Netlify
 on:
   push:
     branches:
-      - main  # Déclenchement sur push vers la branche principale
+      - main
 
 jobs:
   deploy:
@@ -18,15 +18,16 @@ jobs:
           node-version: 18
 
       - name: Install dependencies
-        run: npm install  # ou yarn install selon ton projet
+        run: npm install  # ou yarn install
 
       - name: Build Project
-        run: npm run build  # ou yarn build si nécessaire
+        run: npm run build  # ou yarn build
 
       - name: Deploy to Netlify
+        id: deploy
         uses: nwtgck/actions-netlify@v2
         with:
-          publish-dir: "./dist"  # Remplace par le dossier de build
+          publish-dir: "./dist"  # Remplace par ton dossier de build
           production-branch: main
           github-token: ${{ secrets.GITHUB_TOKEN }}
           deploy-message: "Auto-deployed via GitHub Actions"
@@ -35,3 +36,13 @@ jobs:
           enable-commit-comment: false
           netlify-auth-token: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           netlify-site-id: ${{ secrets.NETLIFY_SITE_ID }}
+
+      - name: Update README with the deployment URL
+        run: |
+          echo "Updating README with deployment URL..."
+          DEPLOYMENT_URL="${{ steps.deploy.outputs.deploy_url }}"
+          sed -i "s|DEVELOPMENT_URL|$DEPLOYMENT_URL|" README.md
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git commit -am "Update README with the latest deployment URL"
+          git push
